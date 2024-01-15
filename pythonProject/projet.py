@@ -18,7 +18,7 @@ np.random.seed(seed)
 set_random_seed(seed)
 
 # Chemin du fichier csv
-path = '/home/vahu72/Documents/ESEO/Machine_Learning/Projet/dataset/dataset.csv'
+path = '../dataset/dataset.csv'
 donnees = pd.read_csv(path)
 
 # Initialiser les listes pour stocker les lots de données et les sorties attendues

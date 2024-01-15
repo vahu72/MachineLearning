@@ -29,12 +29,6 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
-// Choix de l'interface de sortie des données.
-typedef enum {
-  USB_Datalog = 0,
-  SDCARD_Datalog
-} LoggingInterface;
-
 // Numérotation des threads.
 typedef enum {
   THREAD_1 = 0,
@@ -82,19 +76,10 @@ PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 /* USER CODE BEGIN PV */
 
-/* loggingInterface = USB_Datalog     --> Send sensors data via USB */
-/* loggingInterface = SDCARD_Datalog  --> Save sensors data on SDCard (enable with double tap) */
-static LoggingInterface loggingInterface = USB_Datalog;
-
 static uint32_t exec;
 
 // Indicateur d'interruption de l'accéléromètre.
 static volatile uint8_t memsInterrupt = 0;
-
-// Objets représentant les fichiers pour les écritures sur la carte SD.
-static char sdPath[4];
-static FIL sdFile;
-static FATFS sdFatFs;
 
 /* USER CODE END PV */
 
@@ -109,19 +94,11 @@ static void MX_CRC_Init(void);
 // Fonctions de gestion du timer.
 static void dataTimerCallback(void const *arg);
 static void dataTimerStart(void);
-static void dataTimerStop(void);
+//static void dataTimerStop(void);
 
 // Fonctions de gestion de l'accéléromètre LSM6DSM.
 static int32_t LSM6DSM_init(void);
-static int32_t LSM6DSM_doubleTap(void);
 static int32_t LSM6DSM_getData(SensorData *mptr);
-
-// Fonctions de gestion de la carte SD.
-static void SD_init(void);
-static void SD_deinit(void);
-static uint8_t SD_enable(void);
-static void SD_disable(void);
-static uint8_t SD_write(char *s, uint32_t size);
 
 // Threads.
 static void getDataThread(void const *argument);
@@ -183,28 +160,11 @@ int main(void)
   MX_CRC_Init();
   MX_X_CUBE_AI_Init();
   /* USER CODE BEGIN 2 */
-
-  // En mode USB, éteindre la LED 1.
-  if(loggingInterface == USB_Datalog) {
-      BSP_LED_Init(LED1);
-      BSP_LED_Off(LED1);
-  }
+  BSP_LED_Init(LED1);
 
   // Activer l'alimentation par USB.
   HAL_PWREx_EnableVddUSB();
   HAL_PWREx_EnableVddIO2();
-
-  // En mode USB, configurer le port USB en interface série (Communication Device Class).
-  // En mode SD, initialiser le lecteur de carte SD.
-  if(loggingInterface == USB_Datalog) {
-      USBD_Init(&USBD_Device, &VCP_Desc, 0);
-      USBD_RegisterClass(&USBD_Device, USBD_CDC_CLASS);
-      USBD_CDC_RegisterInterface(&USBD_Device, &USBD_CDC_fops);
-      USBD_Start(&USBD_Device);
-  }
-  else {
-      SD_init();
-  }
 
   // Préparer et démarrer deux threads: un pour l'acquisition (prioritaire) et un pour l'écriture.
   osThreadDef(THREAD_1, getDataThread,   osPriorityAboveNormal, 0, configMINIMAL_STACK_SIZE*4);
@@ -461,13 +421,15 @@ int acquire_and_process_data(void * data)
 	}
 
 	SensorData *rptr = evt.value.p;
-	int32_t acc_x = rptr->acc.x;
+	BSP_MOTION_SENSOR_Axes_t acc = rptr->acc;
 
 	float *fdata = (float*)data;
-	for (int i = AI_DUMMYNN_IN_1_SIZE - 1; i > 0; i --) {
-		fdata[i] = fdata[i - 1];
+	for (int i = 0; i < AI_DUMMYNN_IN_1_SIZE; i++) {
+		fdata[i] = fdata[i + 3];
 	}
-	fdata[0] = (float)acc_x;
+	fdata[AI_DUMMYNN_IN_1_SIZE - 2] = (float)acc.x;
+	fdata[AI_DUMMYNN_IN_1_SIZE - 1] = (float)acc.y;
+	fdata[AI_DUMMYNN_IN_1_SIZE - 0] = (float)acc.z;
 
 	// Libérer la mémoire utilisée pour les données du message.
 	osPoolFree(sensorPoolId, rptr);
@@ -513,9 +475,9 @@ static void dataTimerStart(void) {
 }
 
 // Arrêter le timer.
-static void dataTimerStop(void) {
-  osTimerStop(dataTimerId);
-}
+//static void dataTimerStop(void) {
+//  osTimerStop(dataTimerId);
+//}
 
 /* ------------------------------------------------------------------------- *
  * Fonctions de gestion de l'accéléromètre.
@@ -553,13 +515,6 @@ static int32_t LSM6DSM_init(void) {
   return BSP_ERROR_NONE;
 }
 
-// Vérifier si une interruption double-tap s'est produite.
-static int32_t LSM6DSM_doubleTap(void) {
-  BSP_MOTION_SENSOR_Event_Status_t status;
-  BSP_MOTION_SENSOR_Get_Event_Status(LSM6DSM_0, &status);
-  return status.DoubleTapStatus == 1;
-}
-
 // Lire l'état de l'accéléromètre.
 static int32_t LSM6DSM_getData(SensorData *mptr) {
   int32_t ret = BSP_ERROR_NONE;
@@ -587,68 +542,6 @@ static int32_t LSM6DSM_getData(SensorData *mptr) {
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   memsInterrupt = 1;
   osSemaphoreRelease(readDataSemId);
-}
-
-/* ------------------------------------------------------------------------- *
- * Fonctions de gestion de la carte SD.
- * ------------------------------------------------------------------------- */
-
-static void SD_init(void) {
-  if(FATFS_LinkDriver(&SD_Driver, sdPath) == 0) {
-      /* Register the file system object to the FatFs module */
-      if(f_mount(&sdFatFs, (TCHAR const*)sdPath, 0) != FR_OK) {
-	  /* FatFs Initialization Error */
-	  while(1) {
-	      BSP_LED_On(LED1);
-	      HAL_Delay(500);
-	      BSP_LED_Off(LED1);
-	      HAL_Delay(100);
-	  }
-      }
-  }
-}
-
-static uint8_t SD_enable(void) {
-  static uint16_t sdcard_file_counter = 0;
-  char header[] = "T [ms],AccX [mg],AccY [mg],AccZ [mg],GyroX [mdps],GyroY [mdps],GyroZ [mdps]\r\n";
-  uint32_t byteswritten; /* written byte count */
-  char file_name[30] = {0};
-
-  /* SD SPI CS Config */
-  SD_IO_CS_Init();
-
-  sprintf(file_name, "%s%.3d%s", "SensorTile_Log_N", sdcard_file_counter, ".csv");
-  sdcard_file_counter++;
-
-  HAL_Delay(100);
-
-  if(f_open(&sdFile, (char const*)file_name, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
-      sdcard_file_counter--;
-      return 0;
-  }
-
-  if(f_write(&sdFile, (const void*)&header, sizeof(header)-1, (void *)&byteswritten) != FR_OK) {
-      return 0;
-  }
-
-  return 1;
-}
-
-static uint8_t SD_write(char *s, uint32_t size) {
-  uint32_t byteswritten;
-  if(f_write(&sdFile, s, size, (void*)&byteswritten) != FR_OK) {
-      return 0;
-  }
-  return 1;
-}
-
-static void SD_disable(void) {
-  f_close(&sdFile);
-  SD_IO_CS_DeInit();
-}
-
-static void SD_deinit(void) {
-  FATFS_UnLinkDriver(sdPath);
 }
 
 /* USER CODE END 4 */
