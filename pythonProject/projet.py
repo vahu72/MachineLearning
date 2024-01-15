@@ -63,7 +63,8 @@ l2_regularizer = l2(0.01)
 model = tf.keras.models.Sequential([
     tf.keras.layers.Dense(100, activation='relu', input_shape=(E_train.shape[1], E_train.shape[2])),
     tf.keras.layers.Dropout(0.165),
-    tf.keras.layers.Dense(50, activation='relu', kernel_regularizer=l2_regularizer),
+    #tf.keras.layers.Dense(50, activation='relu', kernel_regularizer=l2_regularizer),
+    tf.keras.layers.Dense(50, activation='sigmoid', kernel_regularizer=l2_regularizer),
     tf.keras.layers.Dropout(0.1),
     tf.keras.layers.Dense(25, activation='relu', kernel_regularizer=l2_regularizer),
     tf.keras.layers.Flatten(),
