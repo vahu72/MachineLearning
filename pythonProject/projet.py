@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 # fix random seed for reproducibility
 from tensorflow.python.framework.random_seed import set_random_seed
 
-seed = 0
+seed = 7
 np.random.seed(seed)
 set_random_seed(seed)
 
@@ -26,7 +26,7 @@ E = []
 Y = []
 
 # Diviser les données en lots de 100 lignes avec la même sortie attendue
-for sortie_attendue, groupe in donnees.groupby('Dimension'):
+for sortie_attendue, groupe in donnees.groupby('Balancier'):
     # Diviser le groupe en lots de 100 lignes
     for i in range(0, len(groupe), 100):
         lot = groupe.iloc[i:i+100, :3]  # Sélectionner les colonnes x, y, z
@@ -81,26 +81,6 @@ start_time = timeit.default_timer()
 history = model.fit(E_train, Y_train, validation_split=0.15, shuffle=False, epochs=200, verbose=0, batch_size=20)
 print("Temps passé : %.2fs" % (timeit.default_timer() - start_time))
 
-#plot figure
-plt.figure()
-plt.plot(history.history['acc'])
-plt.plot(history.history['val_acc'])
-plt.title('Model accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Val'], loc='upper left')
-# plt.show()
-# Plot training & validation loss values
-
-plt.figure()
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('Model loss')
-plt.ylabel('Loss')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Val'], loc='upper left')
-# plt.show()
-
 # evaluate the model
 scores = model.evaluate(E_test, Y_test)
 print("\nEvaluation sur le test data %s: %.2f - %s: %.2f%% " % (
@@ -110,18 +90,6 @@ print("\nEvaluation sur le test data %s: %.2f - %s: %.2f%% " % (
 prediction = model.predict_on_batch(E)
 prediction = prediction.reshape(71, 1)
 attendues = Y.reshape(71, 1)
-
-plt.figure()
-plt.subplot(1, 2, 1)
-plt.imshow(attendues, extent=[0, 1, 0, 1])
-plt.title('Cartopgrahie de la fonction attendue')
-plt.xlabel('Entree 1')
-plt.subplot(1, 2, 2)
-plt.imshow(prediction, extent=[0, 1, 0, 1])
-plt.title('Cartopgrahie de la fonction predite')
-plt.xlabel('Entree 1')
-plt.ylabel('Entree 2')
-plt.show()
 
 model_json = model.to_json()
 with open("model.json", "w") as json_file:
