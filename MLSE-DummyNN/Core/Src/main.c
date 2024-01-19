@@ -23,7 +23,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "dummynn.h"
+#include "model_pendulum.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -424,12 +424,13 @@ int acquire_and_process_data(void * data)
 	BSP_MOTION_SENSOR_Axes_t acc = rptr->acc;
 
 	float *fdata = (float*)data;
-	for (int i = 0; i < AI_DUMMYNN_IN_1_SIZE; i++) {
-		fdata[i] = fdata[i + 3];
+
+	for (int i = AI_MODEL_PENDULUM_IN_1_SIZE; i > 2; i--) {
+		fdata[i] = fdata[i - 3];
 	}
-	fdata[AI_DUMMYNN_IN_1_SIZE - 2] = (float)acc.x;
-	fdata[AI_DUMMYNN_IN_1_SIZE - 1] = (float)acc.y;
-	fdata[AI_DUMMYNN_IN_1_SIZE - 0] = (float)acc.z;
+	fdata[0] = (float)acc.x;
+	fdata[1] = (float)acc.y;
+	fdata[2] = (float)acc.z;
 
 	// Libérer la mémoire utilisée pour les données du message.
 	osPoolFree(sensorPoolId, rptr);

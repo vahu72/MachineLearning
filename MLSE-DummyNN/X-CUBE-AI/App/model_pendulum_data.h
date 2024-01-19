@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
-  * @file    dummynn_data.h
+  * @file    model_pendulum_data.h
   * @author  AST Embedded Analytics Research Platform
-  * @date    Mon Jan  8 17:20:41 2024
+  * @date    Mon Jan 15 12:54:19 2024
   * @brief   AI Tool Automatic Code Generator for Embedded NN computing
   ******************************************************************************
   * Copyright (c) 2024 STMicroelectronics.
@@ -14,69 +14,69 @@
   ******************************************************************************
   */
 
-#ifndef DUMMYNN_DATA_H
-#define DUMMYNN_DATA_H
+#ifndef MODEL_PENDULUM_DATA_H
+#define MODEL_PENDULUM_DATA_H
 #pragma once
 
-#include "dummynn_config.h"
-#include "dummynn_data_params.h"
+#include "model_pendulum_config.h"
+#include "model_pendulum_data_params.h"
 
 AI_DEPRECATED
-#define AI_DUMMYNN_DATA_ACTIVATIONS(ptr_)  \
-  ai_dummynn_data_activations_buffer_get(AI_HANDLE_PTR(ptr_))
+#define AI_MODEL_PENDULUM_DATA_ACTIVATIONS(ptr_)  \
+  ai_model_pendulum_data_activations_buffer_get(AI_HANDLE_PTR(ptr_))
 
 AI_DEPRECATED
-#define AI_DUMMYNN_DATA_WEIGHTS(ptr_)  \
-  ai_dummynn_data_weights_buffer_get(AI_HANDLE_PTR(ptr_))
+#define AI_MODEL_PENDULUM_DATA_WEIGHTS(ptr_)  \
+  ai_model_pendulum_data_weights_buffer_get(AI_HANDLE_PTR(ptr_))
 
 
 AI_API_DECLARE_BEGIN
 
 
-extern const ai_u64 s_dummynn_weights_array_u64[4613];
+extern const ai_u64 s_model_pendulum_weights_array_u64[4613];
 
 
 
 /*!
  * @brief Get network activations buffer initialized struct.
- * @ingroup dummynn_data
+ * @ingroup model_pendulum_data
  * @param[in] ptr a pointer to the activations array storage area
  * @return an ai_buffer initialized struct
  */
 AI_DEPRECATED
 AI_API_ENTRY
-ai_buffer ai_dummynn_data_activations_buffer_get(const ai_handle ptr);
+ai_buffer ai_model_pendulum_data_activations_buffer_get(const ai_handle ptr);
 
 /*!
  * @brief Get network weights buffer initialized struct.
- * @ingroup dummynn_data
+ * @ingroup model_pendulum_data
  * @param[in] ptr a pointer to the weights array storage area
  * @return an ai_buffer initialized struct
  */
 AI_DEPRECATED
 AI_API_ENTRY
-ai_buffer ai_dummynn_data_weights_buffer_get(const ai_handle ptr);
+ai_buffer ai_model_pendulum_data_weights_buffer_get(const ai_handle ptr);
 
 /*!
  * @brief Get network weights array pointer as a handle ptr.
- * @ingroup dummynn_data
+ * @ingroup model_pendulum_data
  * @return a ai_handle pointer to the weights array
  */
 AI_DEPRECATED
 AI_API_ENTRY
-ai_handle ai_dummynn_data_weights_get(void);
+ai_handle ai_model_pendulum_data_weights_get(void);
 
 
 /*!
  * @brief Get network params configuration data structure.
- * @ingroup dummynn_data
+ * @ingroup model_pendulum_data
  * @return true if a valid configuration is present, false otherwise
  */
 AI_API_ENTRY
-ai_bool ai_dummynn_data_params_get(ai_network_params* params);
+ai_bool ai_model_pendulum_data_params_get(ai_network_params* params);
 
 
 AI_API_DECLARE_END
 
-#endif /* DUMMYNN_DATA_H */
+#endif /* MODEL_PENDULUM_DATA_H */
 
