@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 # fix random seed for reproducibility
 from tensorflow.python.framework.random_seed import set_random_seed
 
-seed = 0
+seed = 7
 np.random.seed(seed)
 set_random_seed(seed)
 
@@ -26,7 +26,7 @@ E = []
 Y = []
 
 # Diviser les données en lots de 100 lignes avec la même sortie attendue
-for sortie_attendue, groupe in donnees.groupby('Dimension'):
+for sortie_attendue, groupe in donnees.groupby('Balancier'):
     # Diviser le groupe en lots de 100 lignes
     for i in range(0, len(groupe), 100):
         lot = groupe.iloc[i:i+100, :3]  # Sélectionner les colonnes x, y, z
